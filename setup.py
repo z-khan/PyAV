@@ -72,16 +72,17 @@ def get_config_from_pkg_config():
     """
     Get distutils-compatible extension arguments using pkg-config.
     """
+    pkg_config = os.environ.get("PKG_CONFIG", "pkg-config")
     try:
         raw_cflags = subprocess.check_output(
-            ["pkg-config", "--cflags", "--libs"]
+            [pkg_config, "--cflags", "--libs"]
             + ["lib" + name for name in FFMPEG_LIBRARIES]
         )
     except FileNotFoundError:
-        print("pkg-config is required for building PyAV")
+        print(f"{pkg_config} is required for building PyAV")
         exit(1)
     except subprocess.CalledProcessError:
-        print("pkg-config could not find libraries {}".format(FFMPEG_LIBRARIES))
+        print(f"{pkg_config} could not find libraries {FFMPEG_LIBRARIES}")
         exit(1)
 
     known, unknown = parse_cflags(raw_cflags.decode("utf-8"))
@@ -179,7 +180,9 @@ with open(about_file, encoding="utf-8") as fp:
     exec(fp.read(), about)
 
 package_folders = pathlib.Path("av").glob("**/")
-package_data = {".".join(pckg.parts): ["*.pxd", "*.pyi", "*.typed"] for pckg in package_folders}
+package_data = {
+    ".".join(pckg.parts): ["*.pxd", "*.pyi", "*.typed"] for pckg in package_folders
+}
 
 
 with open("README.md") as f:
@@ -194,8 +197,7 @@ setup(
     license="BSD",
     project_urls={
         "Bug Reports": "https://github.com/PyAV-Org/PyAV/issues",
-        "Documentation": "https://pyav.org/docs",
-        "Feedstock": "https://github.com/conda-forge/av-feedstock",
+        "Documentation": "https://pyav.basswood-io.com",
         "Download": "https://pypi.org/project/av",
     },
     author="Mike Boers",

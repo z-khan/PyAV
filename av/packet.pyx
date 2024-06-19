@@ -25,7 +25,7 @@ cdef class Packet(Buffer):
         if input is None:
             return
 
-        if isinstance(input, (int, long)):
+        if isinstance(input, int):
             size = input
         else:
             source = bytesource(input)
@@ -176,6 +176,13 @@ cdef class Packet(Buffer):
         """
         if self.ptr.duration != lib.AV_NOPTS_VALUE:
             return self.ptr.duration
+
+    @duration.setter
+    def duration(self, v):
+        if v is None:
+            self.ptr.duration = lib.AV_NOPTS_VALUE
+        else:
+            self.ptr.duration = v
 
     @property
     def is_keyframe(self):
