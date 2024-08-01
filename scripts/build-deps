@@ -22,16 +22,36 @@ mkdir -p "$PYAV_LIBRARY_PREFIX"
 cd "$PYAV_LIBRARY_ROOT"
 
 
+# Extract major and minor version from PYAV_LIBRARY
+PYAV_LIBRARY_VERSION=$(echo $PYAV_LIBRARY | grep -oP '\d+\.\d+')
+
 # Download and expand the source.
 if [[ ! -d $PYAV_LIBRARY ]]; then
-    url="https://ffmpeg.org/releases/$PYAV_LIBRARY.tar.gz"
-    echo Downloading $url
-    wget --no-check-certificate "$url" || exit 1
-    tar -xzf $PYAV_LIBRARY.tar.gz
-    rm $PYAV_LIBRARY.tar.gz
-    echo
+    git clone git://source.ffmpeg.org/ffmpeg.git $PYAV_LIBRARY -b release/$PYAV_LIBRARY_VERSION --depth=1  || exit 1
+    # git clone https://github.com/FFmpeg/FFmpeg.git $PYAV_LIBRARY
+
+    # Clone Keylost's jetson-ffmpeg
+    git clone https://github.com/Keylost/jetson-ffmpeg.git
+    cd jetson-ffmpeg
+    mkdir build && cd build
+    cmake -DLIB_NVBUF=/usr/lib/aarch64-linux-gnu/nvidia/libnvmm_utils.so \
+      -DLIB_NVBUFSURFACE=/usr/lib/aarch64-linux-gnu/nvidia/libnvbufsurface.so \
+      -DLIB_NVBUFSURFTRANSFORM=/usr/lib/aarch64-linux-gnu/nvidia/libnvbufsurftransform.so \
+      -DLIB_NVJPEG=/usr/lib/aarch64-linux-gnu/nvidia/libnvjpeg.so \
+      -DLIB_V4L2=/usr/lib/aarch64-linux-gnu/nvidia/libnvv4l2.so \
+      ..
+
+    make -j4
+    make install
+    ldconfig
+
+    cd "$PYAV_LIBRARY_ROOT"
 fi
 cd $PYAV_LIBRARY
+
+# Apply Keylost's nvmpi patch
+wget https://github.com/Keylost/jetson-ffmpeg/raw/master/ffmpeg_patches/ffmpeg${PYAV_LIBRARY_VERSION/../}_nvmpi.patch -O ffmpeg_nvmpi.patch
+git apply ffmpeg_nvmpi.patch
 
 echo ./configure
 ./configure \
@@ -43,9 +63,10 @@ echo ./configure
     --enable-debug=3 \
     --enable-gpl \
     --enable-version3 \
-    --enable-libx264 \
+    --disable-libx264 \
     --enable-libxml2 \
     --enable-shared \
+    --enable-nvmpi \
     --prefix="$PYAV_LIBRARY_PREFIX" \
     || exit 2
 echo
