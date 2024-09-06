@@ -22,6 +22,7 @@ class Type(EnumItem):
     SPHERICAL: int
     CONTENT_LIGHT_LEVEL: int
     ICC_PROFILE: int
+    DETECTION_BOUNDING_BOXES: int
     SEI_UNREGISTERED: int
     S12M_TIMECODE: int
 
