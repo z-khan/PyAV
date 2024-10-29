@@ -2,9 +2,11 @@ from fractions import Fraction
 from typing import TypedDict
 
 from av.sidedata.motionvectors import MotionVectors
+from av.sidedata.detectionbboxes import DetectionBBoxes
 
 class SideData(TypedDict, total=False):
     MOTION_VECTORS: MotionVectors
+    DETECTION_BBOXES: DetectionBBoxes
 
 class Frame:
     dts: int | None
