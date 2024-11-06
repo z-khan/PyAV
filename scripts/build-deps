@@ -18,11 +18,15 @@ mkdir -p "$PYAV_LIBRARY_ROOT"
 mkdir -p "$PYAV_LIBRARY_PREFIX"
 cd "$PYAV_LIBRARY_ROOT"
 
-# Extract version from PYAV_LIBRARY
-PYAV_LIBRARY_VERSION="${PYAV_LIBRARY#*-}"
 
+# Clone the source
+if [[ ! -d $PYAV_LIBRARY ]]; then
+    git clone git://source.ffmpeg.org/ffmpeg.git $PYAV_LIBRARY -b n${PYAV_LIBRARY#*-} --depth=1  || exit 1
+    echo
+fi
+
+# Patch jetson-ffmpeg
 if [[ "$PYAV_NVMPI" ]]; then
-    # Clone jetson-ffmpeg
     git clone https://github.com/Keylost/jetson-ffmpeg.git
     cd jetson-ffmpeg
     mkdir build
@@ -31,19 +35,11 @@ if [[ "$PYAV_NVMPI" ]]; then
     make -j4
     make install
     ldconfig
-    cd "$PYAV_LIBRARY_ROOT"
-fi
-
-if [[ ! -d $PYAV_LIBRARY ]]; then
-    git clone git://source.ffmpeg.org/ffmpeg.git $PYAV_LIBRARY -b n$PYAV_LIBRARY_VERSION --depth=1  || exit 1
-    echo
+    cd ..
+    ./ffpatch.sh ../$PYAV_LIBRARY
+    cd ..
 fi
 cd $PYAV_LIBRARY
-
-if [[ "$PYAV_NVMPI" ]]; then
-    wget https://github.com/Keylost/jetson-ffmpeg/raw/master/ffmpeg_patches/ffmpeg6.0_nvmpi.patch -O ffmpeg_nvmpi.patch
-    git apply ffmpeg_nvmpi.patch
-fi
 
 echo ./configure
 ./configure \
