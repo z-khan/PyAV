@@ -44,14 +44,25 @@ mkdir -p "$PYAV_LIBRARY_PREFIX"
 cd "$PYAV_LIBRARY_ROOT"
 
 
-# Download and expand the source.
+# Clone the source
 if [[ ! -d $PYAV_LIBRARY ]]; then
-    url="https://ffmpeg.org/releases/$PYAV_LIBRARY.tar.gz"
-    echo Downloading $url
-    wget --no-check-certificate "$url" || exit 1
-    tar -xzf $PYAV_LIBRARY.tar.gz
-    rm $PYAV_LIBRARY.tar.gz
+    git clone git://source.ffmpeg.org/ffmpeg.git $PYAV_LIBRARY -b n${PYAV_LIBRARY#*-} --depth=1  || exit 1
     echo
+fi
+
+# Patch jetson-ffmpeg
+if [[ "$PYAV_NVMPI" ]]; then
+    git clone https://github.com/Keylost/jetson-ffmpeg.git
+    cd jetson-ffmpeg
+    mkdir build
+    cd build
+    cmake -DWITH_STUBS=ON -DJETSON_MULTIMEDIA_LIB_DIR=/usr/lib/aarch64-linux-gnu/nvidia ..
+    make -j4
+    make install
+    ldconfig
+    cd ..
+    ./ffpatch.sh ../$PYAV_LIBRARY
+    cd ..
 fi
 cd $PYAV_LIBRARY
 
@@ -69,6 +80,7 @@ echo ./configure
     --enable-sse \
     --enable-avx \
     --enable-avx2 \
+    ${PYAV_NVMPI:+--enable-nvmpi} \
     $CONFFLAGS_NVIDIA \
     --prefix="$PYAV_LIBRARY_PREFIX" \
     || exit 2
