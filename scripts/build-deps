@@ -26,25 +26,8 @@ fi
 
 # Add CUDA support if available
 CONFFLAGS_NVIDIA=""
-if [[ -e /usr/src/jetson_multimedia_api/include ]]; then
-    cd $PYAV_LIBRARY_ROOT
-    git clone https://github.com/Keylost/jetson-ffmpeg.git
-    cd jetson-ffmpeg
-    mkdir build
-    cd build
-    cmake -DWITH_STUBS=ON -DJETSON_MULTIMEDIA_LIB_DIR=/usr/lib/aarch64-linux-gnu/nvidia ..
-    make -j4
-    make install
-    ldconfig
-    cd ..
-    ./ffpatch.sh ../$PYAV_LIBRARY
-
-    CONFFLAGS_NVIDIA="--enable-nvmpi"
-    echo "INFO: Found jetson multimedia libraries in /usr/lib/aarch64-linux-gnu/nvidia..."
-    echo "         Building with NVIDIA NVENC/NVDEC support"
-
-elif [[ -e /usr/local/cuda ]]; then
-    # Get Nvidia headers for ffmpeg
+if [[ -e /usr/local/cuda ]]; then
+    # Get NVIDIA headers for ffmpeg
     cd $PYAV_LIBRARY_ROOT
     if [[ ! -e "$PYAV_LIBRARY_ROOT/nv-codec-headers" ]]; then
         git clone https://github.com/FFmpeg/nv-codec-headers.git
@@ -54,17 +37,41 @@ elif [[ -e /usr/local/cuda ]]; then
     fi
 
     PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
-    CONFFLAGS_NVIDIA="--enable-cuda \
-                      --enable-cuvid \
-                      --enable-nvenc \
+    CONFFLAGS_NVIDIA="--enable-cuda-nvcc \
                       --enable-nonfree \
                       --enable-libnpp \
                       --extra-cflags=-I/usr/local/cuda/include \
                       --extra-ldflags=-L/usr/local/cuda/lib64"
-    echo "INFO: Found cuda libraries in /usr/local/cuda..."
+    echo "INFO: Found CUDA libraries in /usr/local/cuda..."
     echo "         Building with NVIDIA NVENC/NVDEC support"
+
+    if [[ -e /etc/nv_tegra_release ]]; then
+        # Get NVIDIA Jetson multimedia api
+        if [[ ! -e /usr/src/jetson_multimedia_api/include ]]; then
+            apt install nvidia-l4t-jetson-multimedia-api -y
+        fi
+        # multimedia libraries are in /usr/lib/aarch64-linux-gnu/tegra for Jetpack<6.x.x(L4T 35.x.x) otherwise /usr/lib/aarch64-linux-gnu/nvidia
+        MMLIB_DIR=$(grep -oP 'TARGET_USERSPACE_LIB_DIR_PATH=\K.*' /etc/nv_tegra_release)
+
+        cd "$PYAV_LIBRARY_ROOT"
+        git clone https://github.com/Keylost/jetson-ffmpeg.git
+        cd jetson-ffmpeg
+        mkdir build
+        cd build
+        cmake -DWITH_STUBS=ON -DJETSON_MULTIMEDIA_LIB_DIR="$MMLIB_DIR" ..
+        make -j4
+        make install
+        ldconfig
+        cd ..
+        ./ffpatch.sh "../$PYAV_LIBRARY"
+        CONFFLAGS_NVIDIA="$CONFFLAGS_NVIDIA \
+                      --enable-nvmpi"
+        echo "INFO: Found jetson multimedia api in /usr/src/jetson_multimedia_api/include..."
+        echo "         Building with Jetson NVENC/NVDEC support"
+    fi
+
 else
-    echo "WARNING: Did not find cuda libraries in /usr/local/cuda..."
+    echo "WARNING: Did not find CUDA libraries in /usr/local/cuda..."
     echo "         Building without NVIDIA NVENC/NVDEC support"
 fi
 
