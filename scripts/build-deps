@@ -46,7 +46,7 @@ if [[ -e /usr/local/cuda ]]; then
         cd ..
         ./ffpatch.sh "../$PYAV_LIBRARY"
         CONFFLAGS_NVIDIA="--enable-nvmpi \
-                          --enable-nonfree    
+                          --enable-nonfree"    
         echo "INFO: Found jetson multimedia api in /usr/src/jetson_multimedia_api/include..."
         echo "         Building with Jetson NVENC/NVDEC support"
     else
