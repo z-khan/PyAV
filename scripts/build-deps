@@ -49,7 +49,7 @@ if [[ -e /usr/local/cuda ]]; then
         fi
 
         #PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
-        CONFFLAGS_NVIDIA="--enable-nvmpi 
+        CONFFLAGS_NVIDIA="--enable-nvmpi"
         echo "INFO: Found jetson multimedia api in /usr/src/jetson_multimedia_api/include..."
         echo "         Building with Jetson NVENC/NVDEC support"
     else
