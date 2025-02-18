@@ -41,7 +41,7 @@ if [[ -e /usr/local/cuda ]]; then
             mkdir build
             cd build
             cmake -DWITH_STUBS=ON ..
-            make -j4
+            make -j$(nproc)
             make PREFIX="$PYAV_LIBRARY_PREFIX" install
             ldconfig
             cd ..
@@ -59,7 +59,7 @@ if [[ -e /usr/local/cuda ]]; then
         if [[ ! -e "$PYAV_LIBRARY_ROOT/nv-codec-headers" ]]; then
             git clone https://github.com/FFmpeg/nv-codec-headers.git
             cd nv-codec-headers
-            make -j4
+            make -j$(nproc)
             make PREFIX="$PYAV_LIBRARY_PREFIX" install
         fi
         
@@ -101,7 +101,7 @@ echo ./configure
 echo
 
 echo make
-make -j4 || exit 3
+make -j$(nproc) || exit 3
 echo
 
 echo make install
