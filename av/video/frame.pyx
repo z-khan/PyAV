@@ -861,9 +861,6 @@ cdef class VideoFrame(Frame):
             raise NotImplementedError(f"Conversion from bytes with format `{format}` is not yet supported")
         else:
             bytes_per_pixel = frame.format.padded_bits_per_pixel // 8
-            expected_size = width * height * bytes_per_pixel
-            if len(img_bytes) != expected_size:
-                raise ValueError(f"Expected {expected_size} bytes, got {len(img_bytes)}")
             copy_bytes_to_plane(img_bytes, frame.planes[0], bytes_per_pixel, flip_horizontal, flip_vertical)
         return frame
 
